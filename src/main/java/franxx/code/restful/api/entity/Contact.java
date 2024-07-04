@@ -5,6 +5,8 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.List;
+
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
@@ -27,4 +29,7 @@ public class Contact {
   @ManyToOne
   @JoinColumn(name = "username", referencedColumnName = "username")
   private User user;
+
+  @OneToMany(mappedBy = "contact")
+  private List<Address> addresses;
 }

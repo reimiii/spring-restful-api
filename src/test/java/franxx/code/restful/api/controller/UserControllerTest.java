@@ -260,6 +260,7 @@ class UserControllerTest {
       assertTrue(BCrypt.checkpw("123", userDb.getPassword()));
 
     });
-
   }
+
+
 }

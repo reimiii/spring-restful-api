@@ -2,6 +2,7 @@ package franxx.code.restful.api.service;
 
 import franxx.code.restful.api.entity.User;
 import franxx.code.restful.api.model.request.RegisterUserRequest;
+import franxx.code.restful.api.model.response.UserResponse;
 import franxx.code.restful.api.repository.UserRepository;
 import franxx.code.restful.api.securty.BCrypt;
 import jakarta.validation.ConstraintViolation;
@@ -39,5 +40,12 @@ public class UserService {
 
     userRepository.save(user);
 
+  }
+
+  public UserResponse get(User user) {
+    return UserResponse.builder()
+          .username(user.getUsername())
+          .name(user.getName())
+          .build();
   }
 }

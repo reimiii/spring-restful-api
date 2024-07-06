@@ -1,0 +1,2 @@
+GET http://localhost:8181/api/users/current
+Accept: application/json

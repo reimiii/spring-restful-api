@@ -6,8 +6,10 @@ import franxx.code.restful.api.model.request.CreateContactRequest;
 import franxx.code.restful.api.model.response.ContactResponse;
 import franxx.code.restful.api.repository.ContactRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.UUID;
 
@@ -34,6 +36,18 @@ public class ContactService {
 
     contactRepository.save(contact);
 
+    return toContactResponse(contact);
+  }
+
+  @Transactional(readOnly = true)
+  public ContactResponse get(User user, String id) {
+    Contact contact = contactRepository.findFirstByUserAndId(user, id)
+          .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "contact not found"));
+
+    return toContactResponse(contact);
+  }
+
+  private ContactResponse toContactResponse(Contact contact) {
     return ContactResponse.builder()
           .id(contact.getId())
           .firstName(contact.getFirstName())
@@ -42,5 +56,4 @@ public class ContactService {
           .phone(contact.getPhone())
           .build();
   }
-
 }

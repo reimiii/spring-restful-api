@@ -2,6 +2,7 @@ package franxx.code.restful.api.controller;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import franxx.code.restful.api.entity.Contact;
 import franxx.code.restful.api.entity.User;
 import franxx.code.restful.api.model.WebResponse;
 import franxx.code.restful.api.model.request.CreateContactRequest;
@@ -16,6 +17,8 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
+
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.test.web.servlet.MockMvcBuilder.*;
@@ -60,13 +63,13 @@ class ContactControllerTest {
     request.setEmail("salah");
 
     mockMvc.perform(
-          post("/api/contacts")
-                .accept(MediaType.APPLICATION_JSON)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(request))
-                .header("X-API-TOKEN", "test")
+        post("/api/contacts")
+            .accept(MediaType.APPLICATION_JSON)
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(request))
+            .header("X-API-TOKEN", "test")
     ).andExpectAll(
-          status().isBadRequest()
+        status().isBadRequest()
     ).andDo(result -> {
       WebResponse<String> response = objectMapper.readValue(result.getResponse().getContentAsString(), new TypeReference<WebResponse<String>>() {
       });
@@ -84,13 +87,13 @@ class ContactControllerTest {
     System.out.println(objectMapper.writeValueAsString(request));
 
     mockMvc.perform(
-          post("/api/contacts")
-                .accept(MediaType.APPLICATION_JSON)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(request))
-                .header("X-API-TOKEN", "test")
+        post("/api/contacts")
+            .accept(MediaType.APPLICATION_JSON)
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(request))
+            .header("X-API-TOKEN", "test")
     ).andExpectAll(
-          status().isOk()
+        status().isOk()
     ).andDo(result -> {
       WebResponse<ContactResponse> response = objectMapper.readValue(result.getResponse().getContentAsString(), new TypeReference<>() {
       });
@@ -104,5 +107,54 @@ class ContactControllerTest {
       System.out.println(objectMapper.writeValueAsString(response));
     });
 
+  }
+
+  @Test
+  void getContactNotFound() throws Exception {
+    mockMvc.perform(
+        get("/api/contacts/23123123123")
+            .accept(MediaType.APPLICATION_JSON)
+            .contentType(MediaType.APPLICATION_JSON)
+            .header("X-API-TOKEN", "test")
+    ).andExpectAll(
+        status().isNotFound()
+    ).andDo(result -> {
+      WebResponse<String> response = objectMapper.readValue(result.getResponse().getContentAsString(), new TypeReference<WebResponse<String>>() {
+      });
+      assertNotNull(response.getErrors());
+    });
+  }
+
+  @Test
+  void getContactSuccess() throws Exception {
+    User user = userRepository.findById("test").orElseThrow();
+
+    Contact contact = new Contact();
+    contact.setId(UUID.randomUUID().toString());
+    contact.setUser(user);
+    contact.setFirstName("Kang Eko");
+    contact.setLastName("Khanedy");
+    contact.setEmail("eko@example.com");
+    contact.setPhone("9238423432");
+    contactRepository.save(contact);
+
+    mockMvc.perform(
+        get("/api/contacts/" + contact.getId())
+            .accept(MediaType.APPLICATION_JSON)
+            .contentType(MediaType.APPLICATION_JSON)
+            .header("X-API-TOKEN", "test")
+    ).andExpectAll(
+        status().isOk()
+    ).andDo(result -> {
+      WebResponse<ContactResponse> response = objectMapper.readValue(result.getResponse().getContentAsString(), new TypeReference<>() {
+      });
+      assertNull(response.getErrors());
+
+      assertEquals(contact.getId(), response.getData().getId());
+      assertEquals(contact.getFirstName(), response.getData().getFirstName());
+      assertEquals(contact.getLastName(), response.getData().getLastName());
+      assertEquals(contact.getEmail(), response.getData().getEmail());
+      assertEquals(contact.getPhone(), response.getData().getPhone());
+    });
   }
 }

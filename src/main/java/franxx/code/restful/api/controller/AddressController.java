@@ -6,10 +6,8 @@ import franxx.code.restful.api.model.request.CreateAddressRequest;
 import franxx.code.restful.api.model.response.AddressResponse;
 import franxx.code.restful.api.service.AddressService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.http.MediaType;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 public class AddressController {
@@ -18,7 +16,9 @@ public class AddressController {
   private AddressService addressService;
 
   @PostMapping(
-      path = "/api/contacts/{contactId}/addresses"
+      path = "/api/contacts/{contactId}/addresses",
+      produces = MediaType.APPLICATION_JSON_VALUE,
+      consumes = MediaType.APPLICATION_JSON_VALUE
   )
   public WebResponse<AddressResponse> create(
       User user,
@@ -28,5 +28,18 @@ public class AddressController {
     request.setContactId(contactId);
     AddressResponse response = addressService.create(user, request);
     return WebResponse.<AddressResponse>builder().data(response).build();
+  }
+
+  @GetMapping(
+      path = "/api/contacts/{contactId}/addresses/{addressId}",
+      produces = MediaType.APPLICATION_JSON_VALUE
+  )
+  public WebResponse<AddressResponse> get(
+      User user,
+      @PathVariable("contactId") String contactId,
+      @PathVariable("addressId") String addressId
+  ) {
+    AddressResponse addressResponse = addressService.get(user, contactId, addressId);
+    return WebResponse.<AddressResponse>builder().data(addressResponse).build();
   }
 }

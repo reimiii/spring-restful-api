@@ -3,6 +3,7 @@ package franxx.code.restful.api.controller;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import franxx.code.restful.api.entity.Address;
 import franxx.code.restful.api.entity.Contact;
 import franxx.code.restful.api.entity.User;
 import franxx.code.restful.api.model.WebResponse;
@@ -121,6 +122,65 @@ class AddressControllerTest {
       assertEquals(request.getPostalCode(), response.getData().getPostalCode());
 
       assertTrue(addressRepository.existsById(response.getData().getId()));
+      System.out.println(
+          objectMapper.configure(SerializationFeature.INDENT_OUTPUT, true)
+              .writeValueAsString(response)
+      );
+    });
+  }
+
+  @Test
+  void getAddressNotFound() throws Exception {
+
+    mockMvc.perform(
+        get("/api/contacts/test/addresses/test")
+            .accept(MediaType.APPLICATION_JSON)
+            .contentType(MediaType.APPLICATION_JSON)
+            .header("X-API-TOKEN", "test")
+    ).andExpectAll(
+        status().isNotFound()
+    ).andDo(result -> {
+      WebResponse<String> response = objectMapper.readValue(result.getResponse().getContentAsString(), new TypeReference<>() {
+      });
+      assertNotNull(response.getErrors());
+      System.out.println(
+          objectMapper.configure(SerializationFeature.INDENT_OUTPUT, true)
+              .writeValueAsString(response)
+      );
+    });
+  }
+
+  @Test
+  void getAddressSuccess() throws Exception {
+    Contact contact = contactRepository.findById("test").orElseThrow();
+
+    Address address = new Address();
+    address.setId("test");
+    address.setContact(contact);
+    address.setStreet("Jalan");
+    address.setCity("Jakarta");
+    address.setProvince("DKI");
+    address.setCountry("Indonesia");
+    address.setPostalCode("123123");
+    addressRepository.save(address);
+
+    mockMvc.perform(
+        get("/api/contacts/test/addresses/test")
+            .accept(MediaType.APPLICATION_JSON)
+            .contentType(MediaType.APPLICATION_JSON)
+            .header("X-API-TOKEN", "test")
+    ).andExpectAll(
+        status().isOk()
+    ).andDo(result -> {
+      WebResponse<AddressResponse> response = objectMapper.readValue(result.getResponse().getContentAsString(), new TypeReference<>() {
+      });
+      assertNull(response.getErrors());
+      assertEquals(address.getId(), response.getData().getId());
+      assertEquals(address.getStreet(), response.getData().getStreet());
+      assertEquals(address.getCity(), response.getData().getCity());
+      assertEquals(address.getProvince(), response.getData().getProvince());
+      assertEquals(address.getCountry(), response.getData().getCountry());
+      assertEquals(address.getPostalCode(), response.getData().getPostalCode());
       System.out.println(
           objectMapper.configure(SerializationFeature.INDENT_OUTPUT, true)
               .writeValueAsString(response)

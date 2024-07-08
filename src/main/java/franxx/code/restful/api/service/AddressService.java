@@ -4,6 +4,7 @@ import franxx.code.restful.api.entity.Address;
 import franxx.code.restful.api.entity.Contact;
 import franxx.code.restful.api.entity.User;
 import franxx.code.restful.api.model.request.CreateAddressRequest;
+import franxx.code.restful.api.model.request.UpdateAddressRequest;
 import franxx.code.restful.api.model.response.AddressResponse;
 import franxx.code.restful.api.repository.AddressRepository;
 import franxx.code.restful.api.repository.ContactRepository;
@@ -56,6 +57,26 @@ public class AddressService {
 
     Address address = addressRepository.findFirstByContactAndId(contact, addressId)
         .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Address is not found"));
+
+    return toAddressResponse(address);
+  }
+
+  @Transactional
+  public AddressResponse update(User user, UpdateAddressRequest request) {
+    validationService.setValidator(request);
+
+    Contact contact = contactRepository.findFirstByUserAndId(user, request.getContactId())
+        .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Contact is not found"));
+
+    Address address = addressRepository.findFirstByContactAndId(contact, request.getAddressId())
+        .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Address is not found"));
+
+    address.setStreet(request.getStreet());
+    address.setCity(request.getCity());
+    address.setProvince(request.getProvince());
+    address.setCountry(request.getCountry());
+    address.setPostalCode(request.getPostalCode());
+    addressRepository.save(address);
 
     return toAddressResponse(address);
   }

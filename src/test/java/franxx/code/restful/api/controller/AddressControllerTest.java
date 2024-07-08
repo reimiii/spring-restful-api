@@ -8,6 +8,7 @@ import franxx.code.restful.api.entity.Contact;
 import franxx.code.restful.api.entity.User;
 import franxx.code.restful.api.model.WebResponse;
 import franxx.code.restful.api.model.request.CreateAddressRequest;
+import franxx.code.restful.api.model.request.UpdateAddressRequest;
 import franxx.code.restful.api.model.response.AddressResponse;
 import franxx.code.restful.api.repository.AddressRepository;
 import franxx.code.restful.api.repository.ContactRepository;
@@ -185,6 +186,79 @@ class AddressControllerTest {
           objectMapper.configure(SerializationFeature.INDENT_OUTPUT, true)
               .writeValueAsString(response)
       );
+    });
+  }
+
+  @Test
+  void updateAddressBadRequest() throws Exception {
+    UpdateAddressRequest request = new UpdateAddressRequest();
+    request.setCountry("");
+
+    mockMvc.perform(
+        put("/api/contacts/test/addresses/test")
+            .accept(MediaType.APPLICATION_JSON)
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(request))
+            .header("X-API-TOKEN", "test")
+    ).andExpectAll(
+        status().isBadRequest()
+    ).andDo(result -> {
+      WebResponse<String> response = objectMapper.readValue(result.getResponse().getContentAsString(), new TypeReference<>() {
+      });
+      assertNotNull(response.getErrors());
+      System.out.println(
+          objectMapper.configure(SerializationFeature.INDENT_OUTPUT, true)
+              .writeValueAsString(response)
+      );
+
+    });
+  }
+
+  @Test
+  void updateAddressSuccess() throws Exception {
+    Contact contact = contactRepository.findById("test").orElseThrow();
+
+    Address address = new Address();
+    address.setId("test");
+    address.setContact(contact);
+    address.setStreet("Lama");
+    address.setCity("Lama");
+    address.setProvince("Lama");
+    address.setCountry("Lama");
+    address.setPostalCode("43535");
+    addressRepository.save(address);
+
+    UpdateAddressRequest request = new UpdateAddressRequest();
+    request.setStreet("Jalan");
+    request.setCity("Jakarta");
+    request.setProvince("DKI");
+    request.setCountry("Indonesia");
+    request.setPostalCode("123123");
+
+    mockMvc.perform(
+        put("/api/contacts/test/addresses/test")
+            .accept(MediaType.APPLICATION_JSON)
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(request))
+            .header("X-API-TOKEN", "test")
+    ).andExpectAll(
+        status().isOk()
+    ).andDo(result -> {
+      WebResponse<AddressResponse> response = objectMapper.readValue(result.getResponse().getContentAsString(), new TypeReference<>() {
+      });
+      assertNull(response.getErrors());
+      assertEquals(request.getStreet(), response.getData().getStreet());
+      assertEquals(request.getCity(), response.getData().getCity());
+      assertEquals(request.getProvince(), response.getData().getProvince());
+      assertEquals(request.getCountry(), response.getData().getCountry());
+      assertEquals(request.getPostalCode(), response.getData().getPostalCode());
+
+      assertTrue(addressRepository.existsById(response.getData().getId()));
+      System.out.println(
+          objectMapper.configure(SerializationFeature.INDENT_OUTPUT, true)
+              .writeValueAsString(response)
+      );
+
     });
   }
 }

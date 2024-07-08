@@ -3,16 +3,24 @@ package franxx.code.restful.api.service;
 import franxx.code.restful.api.entity.Contact;
 import franxx.code.restful.api.entity.User;
 import franxx.code.restful.api.model.request.CreateContactRequest;
+import franxx.code.restful.api.model.request.SearchContactRequest;
 import franxx.code.restful.api.model.request.UpdateContactRequest;
 import franxx.code.restful.api.model.response.ContactResponse;
 import franxx.code.restful.api.repository.ContactRepository;
+import jakarta.persistence.criteria.Predicate;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.util.UUID;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 public class ContactService {
@@ -71,6 +79,45 @@ public class ContactService {
         .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "contact not found"));
 
     contactRepository.delete(contact);
+  }
+
+  @Transactional(readOnly = true)
+  public Page<ContactResponse> search(User user, SearchContactRequest request) {
+    Specification<Contact> specification = (root, query, builder) -> {
+      Collection<Predicate> predicates = new ArrayList<>();
+      predicates.add(builder.equal(root.get("user"), user));
+
+      if (Objects.nonNull(request.getName())) {
+        predicates.add(builder.or(
+            builder.like(root.get("firstName"), "%" + request.getName() + "%"),
+            builder.like(root.get("lastName"), "%" + request.getName() + "%")
+        ));
+      }
+
+      if (Objects.nonNull(request.getEmail())) {
+        predicates.add(builder.or(
+            builder.like(root.get("email"), "%" + request.getEmail() + "%")
+        ));
+      }
+
+      if (Objects.nonNull(request.getPhone())) {
+        predicates.add(builder.or(
+            builder.like(root.get("phone"), "%" + request.getPhone() + "%")
+        ));
+      }
+
+      return query.where(predicates.toArray(new Predicate[]{})).getRestriction();
+    };
+
+    Pageable pageable = PageRequest.of(request.getPage(), request.getSize());
+
+    Page<Contact> contacts = contactRepository.findAll(specification, pageable);
+    List<ContactResponse> contactResponses = contacts.getContent()
+        .stream()
+        .map(this::toContactResponse)
+        .toList();
+
+    return new PageImpl<>(contactResponses, pageable, contacts.getTotalElements());
   }
 
   private ContactResponse toContactResponse(Contact contact) {

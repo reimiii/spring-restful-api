@@ -46,6 +46,11 @@ create table addresses
     foreign key fk_contacts_addresses (contact_id) references contacts (id)
 ) engine innodb;
 
-select * from addresses;
+select *
+from addresses;
 
 desc addresses;
+
+delete from addresses;
+delete from contacts;
+delete from users;
